@@ -20,12 +20,12 @@ const db = mysql.createConnection(
       password: 'luca256789',
       database: 'company'
     },
-    console.log('Connected to the election database.')
+    console.log('Connected to the company database.')
   );
 
 const main = () => {
     console.log("Welcome to the Employee Tracker App.");
-    options();
+    options(db);
 }
 
 main();

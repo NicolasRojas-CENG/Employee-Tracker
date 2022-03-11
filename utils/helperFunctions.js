@@ -29,35 +29,35 @@ const initialQuestion = {
 
 }
 
-const options = () => {
+const options = (db) => {
     inquirer.prompt(initialQuestion).then(answer => {
         switch (answer.action) {
             case promptOptions.viewAllDepartments:
-                viewAll("departments");
+                viewAll("departments", db);
                 break;
 
             case promptOptions.viewAllRoles:
-                viewAll('roles');
+                viewAll('roles', db);
                 break;
 
             case promptOptions.viewAllEmployees:
-                viewAll("employees");
+                viewAll("employees", db);
                 break;
 
             case promptOptions.addDepartment:
-                add("department");
+                add("department", db);
                 break;
 
             case promptOptions.addRole:
-                add("role");
+                add("role", db);
                 break;
 
             case promptOptions.addEmployee:
-                add("employee");
+                add("employee", db);
                 break;
 
             case promptOptions.updateEmployeeRole:
-                updateEmployeeRole();
+                updateEmployeeRole(db);
                 break;
 
             case promptOptions.exit:
@@ -67,23 +67,34 @@ const options = () => {
     });
 }
 
-const viewAll = branch => {
+const viewAll = (branch, db) => {
     switch (branch) {
         case "departments":
-            console.log("departments.\n");
+            db.execute(`Select * From department Order By id;`,
+                function(err, results) {
+                    console.log(results);
+                }
+            );
             break;
         case "roles":
-            console.log("roles.\n");
+            db.execute(`Select * From role Order By id;`,
+                function(err, results) {
+                    console.log(results);
+                }
+            );
             break;
-
         case "employees":
-            console.log("employees.\n");
+            db.execute(`Select * From employee Order By id;`,
+                function(err, results) {
+                    console.log(results);
+                }
+            );
             break;
     }
     options();
 }
 
-const add = branch => {
+const add = (branch, db) => {
     switch (branch) {
         case "department":
             console.log("department.\n");
@@ -99,7 +110,7 @@ const add = branch => {
     options();
 }
 
-const updateEmployeeRole = () => {
+const updateEmployeeRole = db => {
     console.log("updating...\n");
     options();
 }
