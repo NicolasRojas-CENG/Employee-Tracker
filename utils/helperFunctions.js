@@ -70,10 +70,8 @@ const options = (db) => {
 
 async function viewAll (branch, db) {
     let query = "";
-    console.log("here");
     switch (branch) {
         case "departments":
-            console.log("Also.");
             query = 'Select * From department Order By id;';
             break;
         case "roles":
@@ -83,9 +81,12 @@ async function viewAll (branch, db) {
             query ='Select * From employee Order By id;';
             break;
     }
-    console.log("final.");
-    const result = await db.execute(`${query}`);
-    console.table(result);
+    const randomVar = await db.execute(`${query}`,
+        function(err, results) {
+            console.log("\n");
+            console.table(results);
+        }
+    );
     options(db);
 }
 
