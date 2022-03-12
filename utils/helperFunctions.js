@@ -32,6 +32,19 @@ const initialQuestion = {
     ]
 }
 
+const validateAnswerNums = checks => ({
+    validate: input => {
+        if (input === '') {
+            return 'The answer must be a number above 0.'
+        }
+        return checks ? checks(input) : true
+    },
+    filter: input => {
+        // clear the invalid input
+        return (Number.isNaN(input) || Number(input) <= 0 ? '' : Number(input))
+    },
+})
+
 const options = (db) => {
     inquirer.prompt(initialQuestion).then(answer => {
         switch (answer.action) {
@@ -92,30 +105,32 @@ const options = (db) => {
     )
 }
 
-const add = (branch, db) => {
+const add = async (branch, db) => {
     let query = "";
+    let input = "";
     switch (branch) {
         case "department":
-            const input = namePrompt(promptQuestions.departmentName);
-            console.log(input);
-            console.log("Here");
-            //query = `INSERT INTO department (name) VALUES ("?"), (${input});`;
+            input = await namePrompt(promptQuestions.departmentName);
+            query = `INSERT INTO department (name) VALUES (?)`;
             break;
         case "role":
-            console.log("role.\n");
+            input = await namePrompt(promptQuestions.roleName);
+            input = `${input}, ${await salaryPrompt(promptQuestions.roleSalary)}`;
+            input = `${input}, ${await idPrompt(promptQuestions.roleDepartment)}`;
+            query = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
             break;
 
         case "employee":
             console.log("employee.\n");
             break;
     }
-    // db.execute(`${query}`,
-    //     function(err, results) {
-    //         console.log("\n");
-    //         console.table(results);
-    //         (options(db));
-    //     }
-    // )
+    console.log(query, input);
+    db.execute(query, [input],
+        (err, result) => {
+            if (err) err;
+            options(db);
+        }
+    )
 }
 
 const updateEmployeeRole = db => {
@@ -132,8 +147,8 @@ const endSession = () => {
     process.exit();
 }
 
-const namePrompt = (question) => {
-    inquirer.prompt({
+const namePrompt = async (question) => {
+    const answer = await inquirer.prompt({
         name: 'name',
         type: 'input',
         message: question,
@@ -145,10 +160,28 @@ const namePrompt = (question) => {
                 return false;
             }
         }
-    }).then(answer => {
-        console.log("answer:" + answer);
     });
-    console.log("shut");
+    return answer.name;
+}
+
+const salaryPrompt = async (question) => {
+    const answer = await inquirer.prompt({
+        name: "salary",
+        type: "input",
+        message: question,
+        ...validateAnswerNums(),
+    });
+    return answer.salary;
+}
+
+const idPrompt = async (question) => {
+    const answer = await inquirer.prompt({
+        name: "id",
+        type: "input",
+        message: question,
+        ...validateAnswerNums(),
+    });
+    return answer.id;
 }
 
 module.exports = {options};
