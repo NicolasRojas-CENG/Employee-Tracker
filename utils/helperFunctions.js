@@ -1,3 +1,4 @@
+const { query } = require('express');
 const inquirer = require('inquirer');
 
 const promptOptions = {
@@ -67,31 +68,25 @@ const options = (db) => {
     });
 }
 
-const viewAll = (branch, db) => {
+async function viewAll (branch, db) {
+    let query = "";
+    console.log("here");
     switch (branch) {
         case "departments":
-            db.execute(`Select * From department Order By id;`,
-                function(err, results) {
-                    console.log(results);
-                }
-            );
+            console.log("Also.");
+            query = 'Select * From department Order By id;';
             break;
         case "roles":
-            db.execute(`Select * From role Order By id;`,
-                function(err, results) {
-                    console.log(results);
-                }
-            );
+            query ='Select * From role Order By id;';
             break;
         case "employees":
-            db.execute(`Select * From employee Order By id;`,
-                function(err, results) {
-                    console.log(results);
-                }
-            );
+            query ='Select * From employee Order By id;';
             break;
     }
-    options();
+    console.log("final.");
+    const result = await db.execute(`${query}`);
+    console.table(result);
+    options(db);
 }
 
 const add = (branch, db) => {
@@ -107,12 +102,12 @@ const add = (branch, db) => {
             console.log("employee.\n");
             break;
     }
-    options();
+    options(db);
 }
 
 const updateEmployeeRole = db => {
     console.log("updating...\n");
-    options();
+    options(db);
 }
 
 const endSession = () => {
