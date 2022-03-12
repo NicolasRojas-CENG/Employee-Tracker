@@ -68,7 +68,7 @@ const options = (db) => {
     });
 }
 
-async function viewAll (branch, db) {
+ function viewAll (branch, db) {
     let query = "";
     switch (branch) {
         case "departments":
@@ -81,19 +81,20 @@ async function viewAll (branch, db) {
             query ='Select * From employee Order By id;';
             break;
     }
-    const randomVar = await db.execute(`${query}`,
+    db.execute(`${query}`,
         function(err, results) {
             console.log("\n");
             console.table(results);
+            (options(db));
         }
-    );
-    options(db);
+    )
 }
 
-const add = (branch, db) => {
+const add = (branch, db, input) => {
+    let query = "";
     switch (branch) {
         case "department":
-            console.log("department.\n");
+            query = `INSERT INTO department (name) VALUES ("?"), (${input});`;
             break;
         case "role":
             console.log("role.\n");
@@ -103,7 +104,13 @@ const add = (branch, db) => {
             console.log("employee.\n");
             break;
     }
-    options(db);
+    db.execute(`${query}`,
+        function(err, results) {
+            console.log("\n");
+            console.table(results);
+            (options(db));
+        }
+    )
 }
 
 const updateEmployeeRole = db => {
