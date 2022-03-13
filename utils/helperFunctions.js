@@ -43,6 +43,7 @@ const validateAnswerNums = checks => ({
 })
 
 const options = (db) => {
+    //departments = gatherInfo();
     inquirer.prompt(initialQuestion).then(answer => {
         switch (answer.action) {
             case "View all departments":
@@ -84,13 +85,23 @@ const options = (db) => {
     let query = "";
     switch (branch) {
         case "departments":
-            query = 'Select * From department Order By id;';
+            query = 'Select id, name As Department From department;';
             break;
         case "roles":
-            query ='Select * From role Order By id;';
+            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name", title as Role, name as Department, salary as Salary, concat(employee.first_name, " ", employee.last_name) as
+            "Manager Name" from employee as e
+            LEFT join employee on (e.manager_id = employee.id)
+            join role as r on (e.role_id = r.id)
+            join department as d on (r.department_id = d.id)
+            order by e.id;`;
             break;
         case "employees":
-            query ='Select * From employee Order By id;';
+            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name", title as Role, name as Department, salary as Salary, concat(employee.first_name, " ", employee.last_name) as "Manager Name"
+            from employee as e
+            LEFT join employee on (e.manager_id = employee.id)
+            join role as r on (e.role_id = r.id)
+            join department as d on (r.department_id = d.id)
+            order by e.id;`;
             break;
     }
     db.execute(`${query}`,
