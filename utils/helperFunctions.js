@@ -1,3 +1,4 @@
+const { reject } = require('bluebird');
 const inquirer = require('inquirer');
 
 const promptQuestions = {
@@ -7,9 +8,9 @@ const promptQuestions = {
     roleDepartment: "What is the role's department id?",
     employeeFirstName: "What is the employee's first name?",
     employeeLastName: "What is the employee's last name?",
-    employeeRole: "What is the employee's role id",
+    employeeRole: "What is the employee's role",
     employeeManager: "What is the employee's manager id (0 if none)",
-    employeeId: "What is the id of the employee you want to update."
+    employee: "Select the employee to update."
 };
 
 const initialQuestion = {
@@ -80,20 +81,6 @@ const options = (db) => {
     });
 }
 
-async function gatherInfo(db) {
-    var departments = [];
-    var helper = await db.execute(`SELECT name FROM department`,
-    async function(err, results) {
-            if (err) throw err;
-            await results.forEach(result => {
-                departments.push(result.name);
-            })
-            console.log(departments);
-    });
-    console.log("helper");
-    return departments;
-}
-
  function viewAll (branch, db) {
     let query = "";
     switch (branch) {
@@ -101,15 +88,14 @@ async function gatherInfo(db) {
             query = 'Select id, name As Department From department;';
             break;
         case "roles":
-            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name", title as Role, name as Department, salary as Salary, concat(employee.first_name, " ", employee.last_name) as
-            "Manager Name" from employee as e
-            LEFT join employee on (e.manager_id = employee.id)
-            join role as r on (e.role_id = r.id)
-            join department as d on (r.department_id = d.id)
-            order by e.id;`;
+            query =`Select role.id As "Role Id", role.title As Title,
+            department.name As Department, role.salary As Salary From role
+            Join department on (role.department_id = department.id) order by role.id;`;
             break;
         case "employees":
-            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name", title as Role, name as Department, salary as Salary, concat(employee.first_name, " ", employee.last_name) as "Manager Name"
+            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name",
+            title as Role, name as Department, salary as Salary,
+            concat(employee.first_name, " ", employee.last_name) as "Manager Name"
             from employee as e
             LEFT join employee on (e.manager_id = employee.id)
             join role as r on (e.role_id = r.id)
@@ -137,7 +123,7 @@ const add = async (branch, db) => {
         case "role":
             input.push(await namePrompt(promptQuestions.roleName));
             input.push(await salaryPrompt(promptQuestions.roleSalary));
-            input.push(await departmentNamePrompt(promptQuestions.roleDepartment, db));
+            input.push(await listPrompt(promptQuestions.departmentName, db, "Select * From department;"));
             query = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
             break;
 
@@ -164,8 +150,8 @@ const add = async (branch, db) => {
 
 const updateEmployeeRole = async db => {
     let input = [];
-    const employee = await idPrompt(promptQuestions.employeeId);
-    input.push(await idPrompt(promptQuestions.employeeRole));
+    const employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+    input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
     input.push(employee);
     console.log("Update employee Set role_id = ? Where id = ?;", input);
     db.execute("Update employee Set role_id = ? Where id = ?;", input,
@@ -223,16 +209,29 @@ const idPrompt = async (question) => {
     return answer.id;
 }
 
-const departmentNamePrompt = async (question, db) => {
-    const departments =  await gatherInfo(db);
-    console.log(departments);
-    const answer = await inquirer.prompt({
-        name: "department",
-        type: "list",
-        choices: departments,
-        message: question,
-    });
-    return answer.department;
+const listPrompt = async (question, db, query) => {
+    const departments =  await gatherInfo(db, query);
+   const answer = await inquirer.prompt({
+       name: "department",
+       type: "list",
+       choices: departments,
+       message: question,
+   });
+   return answer.department;
+}
+
+async function gatherInfo(db, query) {
+    const data = await new Promise((resolve, reject) => {
+        db.execute(query,
+        function(err, results) {
+            if (err) throw err;
+            resolve(results)
+        })
+    })
+    const departments = data.map((department) => {
+        return {name: department.name, value: department.id}
+    })
+    return departments;
 }
 
 module.exports = {options};
