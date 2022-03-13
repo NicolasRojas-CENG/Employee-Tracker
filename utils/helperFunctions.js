@@ -1,4 +1,3 @@
-const { query } = require('express');
 const inquirer = require('inquirer');
 
 const promptQuestions = {
@@ -9,10 +8,8 @@ const promptQuestions = {
     employeeFirstName: "What is the employee's first name?",
     employeeLastName: "What is the employee's last name?",
     employeeRole: "What is the employee's role id",
-    employeeManager: "What is the employee's manager id (null if none)",
-    addEmployee: "Add an employee",
-    updateEmployeeRole: "Update an employee role",
-    exit: "Exit"
+    employeeManager: "What is the employee's manager id (0 if none)",
+    employeeId: "What is the id of the employee you want to update."
 };
 
 const initialQuestion = {
@@ -35,13 +32,13 @@ const initialQuestion = {
 const validateAnswerNums = checks => ({
     validate: input => {
         if (input === '') {
-            return 'The answer must be a number above 0.'
+            return 'The answer must be greater than -1.'
         }
         return checks ? checks(input) : true
     },
     filter: input => {
         // clear the invalid input
-        return (Number.isNaN(input) || Number(input) <= 0 ? '' : Number(input))
+        return (Number.isNaN(input) || Number(input) < 0 ? '' : Number(input))
     },
 })
 
@@ -107,25 +104,33 @@ const options = (db) => {
 
 const add = async (branch, db) => {
     let query = "";
-    let input = "";
+    let input = [];
     switch (branch) {
         case "department":
-            input = await namePrompt(promptQuestions.departmentName);
+            input.push(await namePrompt(promptQuestions.departmentName));
             query = `INSERT INTO department (name) VALUES (?)`;
             break;
         case "role":
-            input = await namePrompt(promptQuestions.roleName);
-            input = `${input}, ${await salaryPrompt(promptQuestions.roleSalary)}`;
-            input = `${input}, ${await idPrompt(promptQuestions.roleDepartment)}`;
+            input.push(await namePrompt(promptQuestions.roleName));
+            input.push(await salaryPrompt(promptQuestions.roleSalary));
+            input.push(await idPrompt(promptQuestions.roleDepartment));
             query = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
             break;
 
         case "employee":
-            console.log("employee.\n");
+            input.push(await namePrompt(promptQuestions.employeeFirstName));
+            input.push(await namePrompt(promptQuestions.employeeLastName));
+            input.push(await idPrompt(promptQuestions.employeeRole));
+            let manId = await idPrompt(promptQuestions.employeeManager);
+            if (manId == 0) {
+                manId = null;
+            }
+            input.push(manId);
+            query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
             break;
     }
     console.log(query, input);
-    db.execute(query, [input],
+    db.execute(query, input,
         (err, result) => {
             if (err) err;
             options(db);
@@ -133,9 +138,19 @@ const add = async (branch, db) => {
     )
 }
 
-const updateEmployeeRole = db => {
-    console.log("updating...\n");
-    options(db);
+const updateEmployeeRole = async db => {
+    let input = [];
+    const employee = await idPrompt(promptQuestions.employeeId);
+    input.push(await idPrompt(promptQuestions.employeeRole));
+    input.push(employee);
+    console.log("Update employee Set role_id = ? Where id = ?;", input);
+    db.execute("Update employee Set role_id = ? Where id = ?;", input,
+
+        (err, result) => {
+            if (err) err;
+            options(db);
+        }
+    )
 }
 
 const endSession = () => {
