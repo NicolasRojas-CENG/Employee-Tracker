@@ -22,10 +22,13 @@ const initialQuestion = {
         "View all departments",
         "View all roles",
         "View all employees",
+        "View employees by manager",
+        "View employees by department",
         "Add a department",
         "Add a role",
         "Add an employee",
-        "Update an employee role",
+        "Update an employee's role",
+        "Update an employee's manager",
         "Exit"
     ]
 }
@@ -58,6 +61,14 @@ const options = (db) => {
                 viewAll("employees", db);
                 break;
 
+            case "View employees by manager":
+                viewBy("byManager", db);
+                break;
+
+            case "View employees by department":
+                viewBy("byDepartment", db);
+                break;
+
             case "Add a department":
                 add("department", db);
                 break;
@@ -70,8 +81,12 @@ const options = (db) => {
                 add("employee", db);
                 break;
 
-            case "Update an employee role":
-                updateEmployeeRole(db);
+            case "Update an employee's role":
+                updateEmployee("role", db);
+                break;
+
+            case "Update an employee's manager":
+                updateEmployee("manager", db);
                 break;
 
             case "Exit":
@@ -81,7 +96,7 @@ const options = (db) => {
     });
 }
 
- function viewAll (branch, db) {
+function viewAll (branch, db) {
     let query = "";
     switch (branch) {
         case "departments":
@@ -108,6 +123,30 @@ const options = (db) => {
             console.log("\n");
             console.table(results);
             (options(db));
+        }
+    )
+}
+
+const viewBy = async (branch, db) => {
+    let query = "";
+    let input = [];
+    switch (branch) {
+        case "byManager":
+            break;
+
+        case "byDepartment":
+            input.push(await listPrompt(promptQuestions.departmentName, db, "Select * From department;"));
+            query = `Select employee.id As Id, concat(first_name, " ", last_name) as Employee,
+             name As Department From employee Join role on (employee.role_id = role.id)
+             Join department on (role.department_id = department.id) where department_id = ?`;
+            break;
+    }
+
+    console.log(query, input);
+    db.execute(query, input,
+        (err, result) => {
+            if (err) err;
+            options(db);
         }
     )
 }
@@ -148,14 +187,30 @@ const add = async (branch, db) => {
     )
 }
 
-const updateEmployeeRole = async db => {
+const updateEmployee = async (branch, db) => {
     let input = [];
-    const employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
-    input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
-    input.push(employee);
-    console.log("Update employee Set role_id = ? Where id = ?;", input);
-    db.execute("Update employee Set role_id = ? Where id = ?;", input,
+    let query = ""
+    let employee = ""
+switch (branch) {
+    case "role":
+        employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+        input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
+        input.push(employee);
+        query = 'Update employee Set role_id = ? Where id = ?;'
+        break;
 
+    case "manager":
+        employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+        input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
+        input.push(employee);
+        query = 'Update employee Set manager_id = ? Where id = ?;'
+        break;
+}
+    // const employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+    // input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
+    // input.push(employee);
+    console.log(query, input);
+    db.execute(query, input,
         (err, result) => {
             if (err) err;
             options(db);
@@ -216,6 +271,7 @@ const listPrompt = async (question, db, query) => {
        type: "list",
        choices: departments,
        message: question,
+       loop: false
    });
    return answer.department;
 }
