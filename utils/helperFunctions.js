@@ -43,9 +43,8 @@ const validateAnswerNums = checks => ({
 })
 
 const options = (db) => {
-    departments = gatherInfo();
     inquirer.prompt(initialQuestion).then(answer => {
-        switch (answer.action) {
+        switch (answer.options) {
             case "View all departments":
                 viewAll("departments", db);
                 break;
@@ -81,19 +80,17 @@ const options = (db) => {
     });
 }
 
-async function gatherInfo() {
+async function gatherInfo(db) {
     var departments = [];
-    console.log("here");
-    var helper1 = await db.execute(`SELECT name FROM department`,
-        function(err, results) {
+    var helper = await db.execute(`SELECT name FROM department`,
+    async function(err, results) {
             if (err) throw err;
-            results.forEach(result => {
+            await results.forEach(result => {
                 departments.push(result.name);
-                console.log("again");
             })
             console.log(departments);
-        }
-    )
+    });
+    console.log("helper");
     return departments;
 }
 
@@ -140,7 +137,7 @@ const add = async (branch, db) => {
         case "role":
             input.push(await namePrompt(promptQuestions.roleName));
             input.push(await salaryPrompt(promptQuestions.roleSalary));
-            input.push(await idPrompt(promptQuestions.roleDepartment));
+            input.push(await departmentNamePrompt(promptQuestions.roleDepartment, db));
             query = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
             break;
 
@@ -224,6 +221,18 @@ const idPrompt = async (question) => {
         ...validateAnswerNums(),
     });
     return answer.id;
+}
+
+const departmentNamePrompt = async (question, db) => {
+    const departments =  await gatherInfo(db);
+    console.log(departments);
+    const answer = await inquirer.prompt({
+        name: "department",
+        type: "list",
+        choices: departments,
+        message: question,
+    });
+    return answer.department;
 }
 
 module.exports = {options};
