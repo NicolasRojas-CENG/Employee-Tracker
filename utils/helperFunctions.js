@@ -13,7 +13,7 @@ const promptQuestions = {
 };
 
 const initialQuestion = {
-    name: 'action',
+    name: 'options',
     type: 'list',
     message: 'What would you like to do?',
     loop: false,
@@ -43,7 +43,7 @@ const validateAnswerNums = checks => ({
 })
 
 const options = (db) => {
-    //departments = gatherInfo();
+    departments = gatherInfo();
     inquirer.prompt(initialQuestion).then(answer => {
         switch (answer.action) {
             case "View all departments":
@@ -79,6 +79,22 @@ const options = (db) => {
                 break;
         }
     });
+}
+
+async function gatherInfo() {
+    var departments = [];
+    console.log("here");
+    var helper1 = await db.execute(`SELECT name FROM department`,
+        function(err, results) {
+            if (err) throw err;
+            results.forEach(result => {
+                departments.push(result.name);
+                console.log("again");
+            })
+            console.log(departments);
+        }
+    )
+    return departments;
 }
 
  function viewAll (branch, db) {
