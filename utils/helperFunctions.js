@@ -8,8 +8,8 @@ const promptQuestions = {
     roleDepartment: "What is the role's department id?",
     employeeFirstName: "What is the employee's first name?",
     employeeLastName: "What is the employee's last name?",
-    employeeRole: "What is the employee's role",
-    employeeManager: "What is the employee's manager id (0 if none)",
+    employeeRole: "What is the employee's role?",
+    employeeManager: "What is the employee's manager name?",
     employee: "Select the employee to update."
 };
 
@@ -29,6 +29,10 @@ const initialQuestion = {
         "Add an employee",
         "Update an employee's role",
         "Update an employee's manager",
+        "Delete a department",
+        "Delete a role",
+        "Delete an employee",
+        "Utilized budget of a department",
         "Exit"
     ]
 }
@@ -89,6 +93,22 @@ const options = (db) => {
                 updateEmployee("manager", db);
                 break;
 
+            case "Delete a department":
+                del("department", db);
+                break;
+
+            case "Delete a role":
+                del("role", db);
+                break;
+
+            case "Delete an employee":
+                del("employee", db);
+                break;
+
+            case "Utilized budget of a department":
+                budget(db);
+                break;
+
             case "Exit":
                 endSession();
                 break;
@@ -132,6 +152,10 @@ const viewBy = async (branch, db) => {
     let input = [];
     switch (branch) {
         case "byManager":
+            input.push(await listPrompt(promptQuestions.employeeManager, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
+            query = `Select e.id As Id, concat(e.first_name, " ", e.last_name) As Employee,
+            concat(employee.first_name, " ", employee.last_name) As Manager From employee As e
+            Join employee on (e.manager_id = employee.id) Where e.manager_id = ?;`
             break;
 
         case "byDepartment":
@@ -146,6 +170,8 @@ const viewBy = async (branch, db) => {
     db.execute(query, input,
         (err, result) => {
             if (err) err;
+            if (result.length === 0) console.log("There are no entries.\n");
+            else console.table(result);
             options(db);
         }
     )
@@ -213,6 +239,50 @@ switch (branch) {
     db.execute(query, input,
         (err, result) => {
             if (err) err;
+            options(db);
+        }
+    )
+}
+
+const del = async (branch, db) => {
+    let input = [];
+    let query = ""
+    switch (branch ) {
+        case "department":
+            input.push(await listPrompt(promptQuestions.departmentName, db, 'Select * From department;'));
+            query ='Delete From department Where id = ?;';
+            break;
+
+        case "role":
+            input.push(await listPrompt(promptQuestions.roleName, db, 'Select id, title As name From role;'));
+            query ='Delete From role Where id = ?;';
+            break;
+
+        case "employee":
+            input.push(await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
+            query ='Delete From employee Where id = ?;';
+            break;
+    }
+    console.log(query, input);
+    db.execute(query, input,
+        (err, result) => {
+            if (err) err;
+            options(db);
+        }
+    )
+}
+
+const budget = async db => {
+    let input = [];
+    input.push(await listPrompt(promptQuestions.departmentName, db, 'Select * From department;'));
+    const query = `Select sum(salary) As "Utilized Budget", name As Department from role
+     join department on (role.department_id = department.id) Where department.id = ?;`;
+    console.log(query, input);
+    db.execute(query, input,
+        (err, result) => {
+            if (err) err;
+            if (result.length === 0) console.log("There are no entries.\n");
+            else console.table(result);
             options(db);
         }
     )
