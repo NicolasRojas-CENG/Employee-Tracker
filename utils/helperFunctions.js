@@ -1,4 +1,3 @@
-const { reject } = require('bluebird');
 const inquirer = require('inquirer');
 
 const promptQuestions = {
@@ -116,32 +115,32 @@ const options = (db) => {
     });
 }
 
-function viewAll (branch, db) {
+const viewAll = (branch, db) => {
     let query = "";
     switch (branch) {
         case "departments":
-            query = 'Select id, name As Department From department;';
+            query = 'Select id, name As Department From department Order By id;';
             break;
         case "roles":
             query =`Select role.id As "Role Id", role.title As Title,
             department.name As Department, role.salary As Salary From role
-            Join department on (role.department_id = department.id) order by role.id;`;
+            Join department On (role.department_id = department.id) Order By role.id;`;
             break;
         case "employees":
-            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) as "Employee Name",
-            title as Role, name as Department, salary as Salary,
-            concat(employee.first_name, " ", employee.last_name) as "Manager Name"
-            from employee as e
-            LEFT join employee on (e.manager_id = employee.id)
-            join role as r on (e.role_id = r.id)
-            join department as d on (r.department_id = d.id)
-            order by e.id;`;
+            query =`Select e.id As "Employee Id", concat(e.first_name, " ", e.last_name) As "Employee Name",
+            title As Role, name As Department, salary As Salary,
+            concat(employee.first_name, " ", employee.last_name) As "Manager Name"
+            From employee As e
+            Left Join employee On (e.manager_id = employee.id)
+            Join role As r On (e.role_id = r.id)
+            Join department As d On (r.department_id = d.id)
+            Order By e.id;`;
             break;
     }
     db.execute(`${query}`,
-        function(err, results) {
-            console.log("\n");
-            console.table(results);
+        function(err, result) {
+            if (result.length === 0) console.log("There are no entries.\n");
+            else console.table(result);
             (options(db));
         }
     )
@@ -152,10 +151,10 @@ const viewBy = async (branch, db) => {
     let input = [];
     switch (branch) {
         case "byManager":
-            input.push(await listPrompt(promptQuestions.employeeManager, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
+            input.push(await listPrompt(promptQuestions.employeeManager, db, 'Select id, concat(first_name, " ", last_name) As name From employee;'));
             query = `Select e.id As Id, concat(e.first_name, " ", e.last_name) As Employee,
             concat(employee.first_name, " ", employee.last_name) As Manager From employee As e
-            Join employee on (e.manager_id = employee.id) Where e.manager_id = ?;`
+            Join employee On (e.manager_id = employee.id) Where e.manager_id = ?;`
             break;
 
         case "byDepartment":
@@ -165,8 +164,6 @@ const viewBy = async (branch, db) => {
              Join department on (role.department_id = department.id) where department_id = ?`;
             break;
     }
-
-    console.log(query, input);
     db.execute(query, input,
         (err, result) => {
             if (err) err;
@@ -183,31 +180,31 @@ const add = async (branch, db) => {
     switch (branch) {
         case "department":
             input.push(await namePrompt(promptQuestions.departmentName));
-            query = `INSERT INTO department (name) VALUES (?)`;
+            query = `Insert Into department (name) Values (?)`;
             break;
         case "role":
             input.push(await namePrompt(promptQuestions.roleName));
             input.push(await salaryPrompt(promptQuestions.roleSalary));
             input.push(await listPrompt(promptQuestions.departmentName, db, "Select * From department;"));
-            query = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+            query = `Insert Into role (title, salary, department_id) Values (?, ?, ?)`;
             break;
 
         case "employee":
             input.push(await namePrompt(promptQuestions.employeeFirstName));
             input.push(await namePrompt(promptQuestions.employeeLastName));
-            input.push(await idPrompt(promptQuestions.employeeRole));
-            let manId = await idPrompt(promptQuestions.employeeManager);
+            input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
+            let manId = await listPrompt(promptQuestions.employeeManager, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
             if (manId == 0) {
                 manId = null;
             }
             input.push(manId);
-            query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
+            query = `Insert Into employee (first_name, last_name, role_id, manager_id) Values (?, ?, ?, ?)`;
             break;
     }
-    console.log(query, input);
     db.execute(query, input,
         (err, result) => {
             if (err) err;
+            else console.log("Query added successfully.\n");
             options(db);
         }
     )
@@ -217,28 +214,25 @@ const updateEmployee = async (branch, db) => {
     let input = [];
     let query = ""
     let employee = ""
-switch (branch) {
-    case "role":
-        employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
-        input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
-        input.push(employee);
-        query = 'Update employee Set role_id = ? Where id = ?;'
-        break;
+    switch (branch) {
+        case "role":
+            employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+            input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
+            input.push(employee);
+            query = 'Update employee Set role_id = ? Where id = ?;'
+            break;
 
-    case "manager":
-        employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
-        input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
-        input.push(employee);
-        query = 'Update employee Set manager_id = ? Where id = ?;'
-        break;
-}
-    // const employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
-    // input.push(await listPrompt(promptQuestions.employeeRole, db, 'Select id, title As name From role;'));
-    // input.push(employee);
-    console.log(query, input);
+        case "manager":
+            employee = await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;');
+            input.push(await listPrompt(promptQuestions.employee, db, 'Select id, concat(first_name, " ", last_name) as name From employee;'));
+            input.push(employee);
+            query = 'Update employee Set manager_id = ? Where id = ?;'
+            break;
+    }
     db.execute(query, input,
         (err, result) => {
             if (err) err;
+            else console.log("Query updated successfully.\n");
             options(db);
         }
     )
@@ -263,10 +257,11 @@ const del = async (branch, db) => {
             query ='Delete From employee Where id = ?;';
             break;
     }
-    console.log(query, input);
     db.execute(query, input,
         (err, result) => {
             if (err) err;
+            else console.log("Query deleted successfully.\n");
+            maxId(db, branch);
             options(db);
         }
     )
@@ -275,9 +270,8 @@ const del = async (branch, db) => {
 const budget = async db => {
     let input = [];
     input.push(await listPrompt(promptQuestions.departmentName, db, 'Select * From department;'));
-    const query = `Select sum(salary) As "Utilized Budget", name As Department from role
-     join department on (role.department_id = department.id) Where department.id = ?;`;
-    console.log(query, input);
+    const query = `Select sum(salary), name From employee Join role On (employee.role_id = role.id)
+     Join department On (role.department_id = department.id) Where department_id = ? Group By department.id;`;
     db.execute(query, input,
         (err, result) => {
             if (err) err;
@@ -324,16 +318,6 @@ const salaryPrompt = async (question) => {
     return answer.salary;
 }
 
-const idPrompt = async (question) => {
-    const answer = await inquirer.prompt({
-        name: "id",
-        type: "input",
-        message: question,
-        ...validateAnswerNums(),
-    });
-    return answer.id;
-}
-
 const listPrompt = async (question, db, query) => {
     const departments =  await gatherInfo(db, query);
    const answer = await inquirer.prompt({
@@ -358,6 +342,54 @@ async function gatherInfo(db, query) {
         return {name: department.name, value: department.id}
     })
     return departments;
+}
+
+const maxId = async (db, branch) => {
+    let query = "";
+    switch (branch) {
+        case "department":
+            query = "Select max( id ) As Id FROM department;";
+            break;
+
+        case "role":
+            query = "Select max( id ) As Id FROM role;";
+            break;
+
+        case "employee":
+            query = "Select max( id ) As Id FROM employee;";
+            break;
+    }
+    const data = await new Promise((resolve, reject) => {
+        db.execute(query,
+        function(err, results) {
+            if (err) throw err;
+            resolve(results)
+        })
+    })
+    const max = data.map((id) => {
+        return {value: id.Id}
+    })
+    reset(db, branch, max[0].value);
+}
+
+const reset = async (db, branch, number) => {
+    let query = ""
+    number++;
+    switch (branch) {
+        case "department":
+            query = `Alter Table department AUTO_INCREMENT = ${number}`;
+            break;
+
+        case "role":
+            query = `Alter Table role AUTO_INCREMENT = ${number}`;
+            break;
+
+        case "employee":
+            query = `Alter Table employee AUTO_INCREMENT = ${number}`;
+            break;
+    }
+    await db.execute(query);
+    return;
 }
 
 module.exports = {options};
