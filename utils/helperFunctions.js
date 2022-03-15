@@ -1,5 +1,7 @@
+//Importing the inquirer module.
 const inquirer = require('inquirer');
 
+//Prompt Questions.
 const promptQuestions = {
     departmentName: "What is the department name?",
     roleName: "What is the role name?",
@@ -12,6 +14,7 @@ const promptQuestions = {
     employee: "Select the employee to update."
 };
 
+//List of options to interact with the database.
 const initialQuestion = {
     name: 'options',
     type: 'list',
@@ -36,6 +39,7 @@ const initialQuestion = {
     ]
 }
 
+//Function used to validate the answer for the salary.
 const validateAnswerNums = checks => ({
     validate: input => {
         if (input === '') {
@@ -49,6 +53,7 @@ const validateAnswerNums = checks => ({
     },
 })
 
+//Function used to designate where in the code to go after the user gives its answer.
 const options = (db) => {
     inquirer.prompt(initialQuestion).then(answer => {
         switch (answer.options) {
@@ -115,6 +120,7 @@ const options = (db) => {
     });
 }
 
+//Function used for the View "table" options.
 const viewAll = (branch, db) => {
     let query = "";
     switch (branch) {
@@ -146,6 +152,7 @@ const viewAll = (branch, db) => {
     )
 }
 
+//Function used for the View by "parameter" options.
 const viewBy = async (branch, db) => {
     let query = "";
     let input = [];
@@ -174,6 +181,7 @@ const viewBy = async (branch, db) => {
     )
 }
 
+//Function used for the Add to "table" options.
 const add = async (branch, db) => {
     let query = "";
     let input = [];
@@ -210,6 +218,7 @@ const add = async (branch, db) => {
     )
 }
 
+//Function used for updating an employee entry.
 const updateEmployee = async (branch, db) => {
     let input = [];
     let query = ""
@@ -238,6 +247,7 @@ const updateEmployee = async (branch, db) => {
     )
 }
 
+//Function used for the Delete from "table" options.
 const del = async (branch, db) => {
     let input = [];
     let query = ""
@@ -267,10 +277,11 @@ const del = async (branch, db) => {
     )
 }
 
+//Function used for the budget of department option.
 const budget = async db => {
     let input = [];
     input.push(await listPrompt(promptQuestions.departmentName, db, 'Select * From department;'));
-    const query = `Select sum(salary), name From employee Join role On (employee.role_id = role.id)
+    const query = `Select sum(salary) As "Utilized Budget", name As Department From employee Join role On (employee.role_id = role.id)
      Join department On (role.department_id = department.id) Where department_id = ? Group By department.id;`;
     db.execute(query, input,
         (err, result) => {
@@ -282,6 +293,7 @@ const budget = async db => {
     )
 }
 
+//Function used to exit from the application.
 const endSession = () => {
     console.log("");
     console.log("------------------------------------------------");
@@ -291,6 +303,7 @@ const endSession = () => {
     process.exit();
 }
 
+//Function used for name based prompts.
 const namePrompt = async (question) => {
     const answer = await inquirer.prompt({
         name: 'name',
@@ -308,6 +321,7 @@ const namePrompt = async (question) => {
     return answer.name;
 }
 
+//Function used for the salary prompt.
 const salaryPrompt = async (question) => {
     const answer = await inquirer.prompt({
         name: "salary",
@@ -318,6 +332,7 @@ const salaryPrompt = async (question) => {
     return answer.salary;
 }
 
+//Function used for list based prompts.
 const listPrompt = async (question, db, query) => {
     const departments =  await gatherInfo(db, query);
    const answer = await inquirer.prompt({
@@ -330,6 +345,7 @@ const listPrompt = async (question, db, query) => {
    return answer.department;
 }
 
+//Function used to gather values from a table for the list based prompts.
 async function gatherInfo(db, query) {
     const data = await new Promise((resolve, reject) => {
         db.execute(query,
@@ -344,6 +360,7 @@ async function gatherInfo(db, query) {
     return departments;
 }
 
+//Joint function to update the auto_increament after entry deletion.
 const maxId = async (db, branch) => {
     let query = "";
     switch (branch) {
@@ -372,6 +389,7 @@ const maxId = async (db, branch) => {
     reset(db, branch, max[0].value);
 }
 
+//Joint function to update the auto_increament after entry deletion.
 const reset = async (db, branch, number) => {
     let query = ""
     number++;
@@ -392,4 +410,5 @@ const reset = async (db, branch, number) => {
     return;
 }
 
+//Export the options() for use outside the file.
 module.exports = {options};
