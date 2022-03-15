@@ -62,8 +62,59 @@ Select the option you want to execute, and answer any prompts that may appear.
 - Added walkthrough videos of the application.
 
 # <a name="Preview"> Site/App Preview </a>
-I will add this later.
+View "table" Options.
+
+
+https://user-images.githubusercontent.com/55503463/158305677-005cc0da-daa3-451b-bf60-a31b55061024.mp4
+
+
+Add to "table" Options.
+
+
+https://user-images.githubusercontent.com/55503463/158305838-dfdc3c37-32f2-4bda-aa52-dfbdb12a16c0.mp4
+
+
+View Employee By Options
+
+
+https://user-images.githubusercontent.com/55503463/158306101-cdceffc7-7817-4c31-bde4-97b63d3334d5.mp4
+
+
+Update Employee's Options
+
+
+https://user-images.githubusercontent.com/55503463/158306236-32e4a940-59a1-4dee-9838-e00cc7760a7e.mp4
+
+
+Utilized Budget of Department Option
+
+
+https://user-images.githubusercontent.com/55503463/158306346-3c1fd5ab-855e-4132-a206-598fbb5e54ab.mp4
+
+
+Delete From "table" Options
+
+
+https://user-images.githubusercontent.com/55503463/158306731-2418ca33-1b41-4c47-9e32-16ff556fd7e4.mp4
+
+
+Cascade Deletion
+
+
+https://user-images.githubusercontent.com/55503463/158306835-adfd1ad9-2d69-41ab-b5fe-778176ffd402.mp4
+
+
+Exit Option
+
+
+https://user-images.githubusercontent.com/55503463/158306934-612a5a75-14fe-44c0-9f80-ce0270708634.mp4
+
+
+
+
 # <a name="Questions"> Questions </a>
   If you have any questions, feel free to contact me through GitHub at
   [nicolasrojas-ceng](https://github.com/nicolasrojas-ceng). <br>
   Alternatively, you can contact me at my email: [lucanrojas@gmail.com](mailto:lucanrojas@gmail.com)
+  
+  Note: In the employee table, the id 10 is missing and skips to 11. That entry existed before the auto_increament reset functions for the table IDs. That is not a problem with a fresh database.
